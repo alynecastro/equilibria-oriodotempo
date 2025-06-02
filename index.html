@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equilibria: O Rio do Tempo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .font-title {
+            font-family: 'Playfair Display', serif;
+        }
+        .guardian-tempus-svg { /* Estilo para o SVG do Tempus */
+            width: 100px;
+            height: 100px;
+            fill: currentColor; 
+        }
+        #river-game-area {
+            width: 100%;
+            height: 400px; /* Altura da área do rio */
+            background: linear-gradient(to bottom, #93C5FD, #60A5FA, #3B82F6); /* Tons de azul para o rio */
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 3px solid #2563EB;
+        }
+        .boat {
+            width: 40px;
+            height: 60px;
+            /* background-color: #F59E0B; Cor do barco (laranja) */
+            position: absolute;
+            bottom: 20px; /* Posição inicial do barco */
+            left: 50%;
+            transform: translateX(-50%);
+            transition: left 0.1s linear;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem; /* Tamanho do emoji do barco */
+        }
+        .obstacle, .bonus {
+            width: 30px;
+            height: 30px;
+            /* background-color: #4B5563; Cor do obstáculo (cinza escuro) */
+            position: absolute;
+            border-radius: 50%; /* Obstáculos redondos */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem; /* Tamanho do emoji do obstáculo/bónus */
+        }
+        .obstacle {
+            /* background-color: #7F1D1D; /* Vermelho escuro para obstáculos */
+        }
+        .bonus {
+            /* background-color: #FBBF24; /* Amarelo para bónus */
+        }
+
+        .hidden-section {
+            display: none;
+        }
+        .fade-in {
+            animation: fadeInAnimation 1s ease-in forwards;
+        }
+        @keyframes fadeInAnimation {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .custom-button {
+            background-color: #2563EB; /* Azul escuro para botões */
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        .custom-button:hover {
+            background-color: #1D4ED8;
+            transform: translateY(-2px);
+        }
+        .custom-button:active {
+            transform: translateY(0px);
+        }
+        .gemini-button {
+            background-color: #0E7490; /* Ciano para o botão Gemini do Tempus */
+        }
+        .gemini-button:hover {
+            background-color: #155E75;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #0E7490; /* Ciano para o spinner */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .tip-container {
+            background-color: #ECFEFF; /* Ciano muito claro */
+            border: 1px solid #A5F3FC; /* Ciano claro */
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            text-align: left;
+            font-style: italic;
+            color: #083344; /* Ciano escuro */
+        }
+        .score-board {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1E3A8A; /* Azul mais escuro para o texto do placar */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-100 to-cyan-200 text-gray-800 flex items-center justify-center min-h-screen p-4">
+
+    <div id="game-container" class="w-full max-w-2xl mx-auto bg-white/80 backdrop-blur-md shadow-2xl rounded-xl p-6 md:p-10">
+
+        <section id="start-screen-river" class="text-center space-y-6 fade-in">
+            <h1 class="text-4xl md:text-5xl font-title text-blue-600">Equilibria</h1>
+            <h2 class="text-2xl md:text-3xl font-semibold text-blue-500">O Rio do Tempo</h2>
+            
+            <div class="flex justify-center my-4">
+                <svg class="guardian-tempus-svg text-blue-500" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM12.75 7V11.25L16.5607 13.3107L15.9393 14.6893L11.75 12.25V7H12.75Z"/>
+                </svg>
+            </div>
+            <p class="text-lg text-gray-700">Viajante do tempo, bem-vindo(a)! Eu sou <strong class="text-blue-600">Tempus</strong>, o Guardião do Rio do Tempo.</p>
+            <p class="text-md text-gray-600">Este rio representa a sua jornada através das horas. Navegue com sabedoria para alcançar os seus objetivos.</p>
+            <p class="text-md text-gray-600">Use as <strong class="text-blue-500">setas Esquerda (←) e Direita (→)</strong> para mover o seu barco (🚤). Desvie-se dos obstáculos de procrastinação (🚧) e apanhe os bónus de foco (✨). Tente alcançar <strong id="target-score-info">1000</strong> pontos!</p>
+            <button id="start-button-river" class="custom-button">Começar a Navegar</button>
+        </section>
+
+        <section id="game-screen-river" class="hidden-section text-center space-y-4">
+            <div id="river-game-area">
+                <div id="boat" class="boat">🚤</div>
+                </div>
+            <div class="score-board">
+                Pontuação: <span id="score-display" class="font-bold">0</span> | 
+                Energia de Foco: <span id="focus-energy-display" class="font-bold">100</span>%
+            </div>
+             <p id="tempus-message" class="text-md text-blue-700 font-semibold">Mantenha o curso e o foco!</p>
+        </section>
+
+        <section id="end-screen-river" class="hidden-section text-center space-y-6">
+            <h2 id="end-title-river" class="text-3xl md:text-4xl font-semibold text-blue-600">Jornada Concluída!</h2>
+             <div class="flex justify-center my-4">
+                <svg class="guardian-tempus-svg text-blue-500" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                     <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 12 20 12 20ZM11.25 7.75V12H7.5V13.5H11.25V17.25H12.75V13.5H16.5V12H12.75V7.75H11.25Z"/>
+                </svg>
+            </div>
+            <p id="end-message-river" class="text-lg text-gray-700">Conseguiu navegar pelo Rio do Tempo!</p>
+             <p id="final-score-message" class="text-xl font-bold text-blue-700"></p>
+            <p class="text-md text-gray-600">Lembre-se, cada momento é uma oportunidade. Use o seu tempo com intenção.</p>
+            <div class="space-x-4 mt-4">
+                <button id="restart-button-river" class="custom-button">Navegar Novamente</button>
+                <button id="gemini-tip-button-river" class="custom-button gemini-button">✨ Conselho de Tempus</button>
+            </div>
+            <div id="gemini-tip-loading-river" class="loading-spinner hidden-section mt-4"></div>
+            <div id="gemini-tip-container-river" class="tip-container hidden-section">
+                <p id="gemini-tip-text-river"></p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Elementos da UI do Rio
+        const startScreenRiver = document.getElementById('start-screen-river');
+        const gameScreenRiver = document.getElementById('game-screen-river');
+        const endScreenRiver = document.getElementById('end-screen-river');
+
+        const startButtonRiver = document.getElementById('start-button-river');
+        const restartButtonRiver = document.getElementById('restart-button-river');
+        const geminiTipButtonRiver = document.getElementById('gemini-tip-button-river');
+
+        const riverGameArea = document.getElementById('river-game-area');
+        const boat = document.getElementById('boat');
+        const scoreDisplay = document.getElementById('score-display');
+        const focusEnergyDisplay = document.getElementById('focus-energy-display');
+        const tempusMessage = document.getElementById('tempus-message');
+        const targetScoreInfo = document.getElementById('target-score-info');
+        
+        const endTitleRiver = document.getElementById('end-title-river');
+        const endMessageRiver = document.getElementById('end-message-river');
+        const finalScoreMessage = document.getElementById('final-score-message');
+
+        const geminiTipContainerRiver = document.getElementById('gemini-tip-container-river');
+        const geminiTipTextRiver = document.getElementById('gemini-tip-text-river');
+        const geminiTipLoadingRiver = document.getElementById('gemini-tip-loading-river');
+
+        // Configurações do Jogo do Rio
+        const BOAT_STEP = 20; // Pixels que o barco se move
+        const GAME_SPEED = 100; // Intervalo para o loop do jogo em ms (mais baixo = mais rápido)
+        const ITEM_SPEED = 5; // Pixels que os itens descem a cada ciclo
+        const ITEM_SPAWN_INTERVAL = 1500; // Intervalo para gerar novos itens em ms
+        const TARGET_SCORE = 1000;
+        const MAX_FOCUS_ENERGY = 100;
+        const OBSTACLE_HIT_PENALTY = 20; // Perda de energia de foco
+        const BONUS_GAIN = 10; // Ganho de energia de foco
+        const SCORE_PER_TICK = 1; // Pontos ganhos por tick do jogo
+        const BONUS_SCORE = 50; // Pontos por apanhar um bónus
+
+        let score = 0;
+        let focusEnergy = MAX_FOCUS_ENERGY;
+        let riverGameInterval;
+        let itemSpawnInterval;
+        let isRiverGameRunning = false;
+        let gameItems = []; // Array para guardar obstáculos e bónus
+
+        targetScoreInfo.textContent = TARGET_SCORE;
+
+        // Função para mostrar uma secção e esconder as outras
+        function showRiverSection(sectionToShow, fadeIn = true) {
+            [startScreenRiver, gameScreenRiver, endScreenRiver, geminiTipContainerRiver, geminiTipLoadingRiver].forEach(section => {
+                if (section.id === sectionToShow.id) {
+                    section.classList.remove('hidden-section');
+                    if (fadeIn) section.classList.add('fade-in');
+                } else {
+                    section.classList.add('hidden-section');
+                    if (fadeIn) section.classList.remove('fade-in');
+                }
+            });
+        }
+
+        // Movimentação do barco
+        function moveBoat(direction) {
+            if (!isRiverGameRunning) return;
+            const currentLeft = parseInt(boat.style.left || '50%');
+            const gameAreaWidth = riverGameArea.offsetWidth;
+            const boatWidth = boat.offsetWidth;
+            let newLeft;
+
+            if (direction === 'left') {
+                newLeft = Math.max(0, currentLeft - BOAT_STEP);
+            } else if (direction === 'right') {
+                newLeft = Math.min(gameAreaWidth - boatWidth, currentLeft + BOAT_STEP);
+            }
+            boat.style.left = newLeft + 'px';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!isRiverGameRunning) return;
+            if (e.key === 'ArrowLeft') {
+                moveBoat('left');
+            } else if (e.key === 'ArrowRight') {
+                moveBoat('right');
+            }
+        });
+        
+        // Gerar itens (obstáculos e bónus)
+        function spawnItem() {
+            if (!isRiverGameRunning) return;
+
+            const type = Math.random() < 0.6 ? 'obstacle' : 'bonus'; // 60% de chance de ser obstáculo
+            const itemElement = document.createElement('div');
+            itemElement.classList.add(type);
+            itemElement.textContent = type === 'obstacle' ? '🚧' : '✨';
+            itemElement.style.left = Math.random() * (riverGameArea.offsetWidth - 30) + 'px'; // Posição X aleatória
+            itemElement.style.top = '-30px'; // Começa fora do ecrã, no topo
+            
+            riverGameArea.appendChild(itemElement);
+            gameItems.push(itemElement);
+        }
+
+        // Loop principal do jogo
+        function gameLoop() {
+            if (!isRiverGameRunning) return;
+
+            score += SCORE_PER_TICK;
+            updateDisplays();
+
+            // Mover itens e verificar colisões
+            gameItems.forEach((item, index) => {
+                let itemTop = parseInt(item.style.top);
+                itemTop += ITEM_SPEED;
+                item.style.top = itemTop + 'px';
+
+                // Verificar colisão com o barco
+                if (itemTop > riverGameArea.offsetHeight - 60 - 30 && // Perto da altura do barco
+                    itemTop < riverGameArea.offsetHeight - 20 &&    // E não passou completamente
+                    isColliding(boat, item)) {
+                    
+                    if (item.classList.contains('obstacle')) {
+                        focusEnergy -= OBSTACLE_HIT_PENALTY;
+                        tempusMessage.textContent = "Cuidado! Uma distração custou-lhe foco.";
+                    } else if (item.classList.contains('bonus')) {
+                        focusEnergy = Math.min(MAX_FOCUS_ENERGY, focusEnergy + BONUS_GAIN);
+                        score += BONUS_SCORE;
+                        tempusMessage.textContent = "Excelente! Apanhou um impulso de foco!";
+                    }
+                    item.remove();
+                    gameItems.splice(index, 1);
+                    updateDisplays();
+                }
+                // Remover item se saiu do ecrã
+                else if (itemTop > riverGameArea.offsetHeight) {
+                    item.remove();
+                    gameItems.splice(index, 1);
+                }
+            });
+
+            if (focusEnergy <= 0) {
+                endRiverGame(false); // Perdeu por falta de foco
+                return;
+            }
+            if (score >= TARGET_SCORE && TARGET_SCORE > 0) { // Apenas se houver um TARGET_SCORE > 0
+                 endRiverGame(true); // Ganhou por atingir a pontuação
+                 return;
+            }
+
+
+            riverGameInterval = setTimeout(gameLoop, GAME_SPEED);
+        }
+
+        function isColliding(element1, element2) {
+            const rect1 = element1.getBoundingClientRect();
+            const rect2 = element2.getBoundingClientRect();
+            return !(
+                rect1.right < rect2.left ||
+                rect1.left > rect2.right ||
+                rect1.bottom < rect2.top ||
+                rect1.top > rect2.bottom
+            );
+        }
+
+        function updateDisplays() {
+            scoreDisplay.textContent = score;
+            focusEnergyDisplay.textContent = Math.max(0, focusEnergy) + '%'; // Não mostrar energia negativa
+        }
+
+        // Função para iniciar o jogo do rio
+        function startRiverGame() {
+            isRiverGameRunning = true;
+            score = 0;
+            focusEnergy = MAX_FOCUS_ENERGY;
+            gameItems.forEach(item => item.remove()); // Limpa itens antigos
+            gameItems = [];
+            boat.style.left = '50%'; // Reseta posição do barco
+            updateDisplays();
+            showRiverSection(gameScreenRiver);
+            tempusMessage.textContent = "Mantenha o curso e o foco!";
+            geminiTipContainerRiver.classList.add('hidden-section');
+            geminiTipTextRiver.textContent = '';
+
+            riverGameInterval = setTimeout(gameLoop, GAME_SPEED);
+            itemSpawnInterval = setInterval(spawnItem, ITEM_SPAWN_INTERVAL);
+        }
+
+        // Função para finalizar o jogo do rio
+        function endRiverGame(reachedTargetScore) {
+            isRiverGameRunning = false;
+            clearTimeout(riverGameInterval);
+            clearInterval(itemSpawnInterval);
+            showRiverSection(endScreenRiver);
+
+            finalScoreMessage.textContent = `A sua pontuação final: ${score}`;
+
+            if (reachedTargetScore) {
+                endTitleRiver.textContent = "Destino Alcançado!";
+                endMessageRiver.textContent = "Navegou com mestria e atingiu o seu objetivo no tempo certo!";
+            } else if (focusEnergy <= 0) {
+                endTitleRiver.textContent = "Foco Esgotado!";
+                endMessageRiver.textContent = "As distrações levaram a melhor. Recarregue as energias e tente novamente.";
+            } else { // Se saiu cedo ou outro motivo
+                 endTitleRiver.textContent = "Jornada Interrompida";
+                 endMessageRiver.textContent = "Decidiu fazer uma pausa. O Rio do Tempo espera o seu regresso.";
+            }
+        }
+        
+        // Função para buscar dica de gestão do tempo da API Gemini
+        async function fetchTimeManagementTip() {
+            geminiTipLoadingRiver.classList.remove('hidden-section');
+            geminiTipContainerRiver.classList.add('hidden-section');
+            geminiTipTextRiver.textContent = '';
+            geminiTipButtonRiver.disabled = true;
+
+            const prompt = "Gere uma curta dica sobre gestão do tempo ou produtividade (máximo 2 frases) para um jogo chamado Equilibria. A dica deve ser prática e inspiradora, como se viesse de um sábio guardião do tempo chamado Tempus. Use uma linguagem clara e motivadora. Não inclua saudações ou despedidas, apenas a dica em si.";
+            
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Deixar vazio, será fornecido pelo ambiente
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Erro da API Gemini (Tempus):", errorData);
+                    throw new Error(`Erro da API: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    geminiTipTextRiver.textContent = `Tempus recorda: "${text}"`;
+                } else {
+                    console.error("Resposta inesperada da API Gemini (Tempus):", result);
+                    geminiTipTextRiver.textContent = "Tempus está a observar o fluxo do tempo... Tente novamente mais tarde.";
+                }
+            } catch (error) {
+                console.error('Erro ao buscar dica da API Gemini (Tempus):', error);
+                geminiTipTextRiver.textContent = "Uma corrente inesperada agitou o rio. Por favor, tente novamente para receber a sabedoria de Tempus.";
+            } finally {
+                geminiTipLoadingRiver.classList.add('hidden-section');
+                geminiTipContainerRiver.classList.remove('hidden-section');
+                geminiTipButtonRiver.disabled = false;
+            }
+        }
+
+        // Event Listeners do Rio
+        startButtonRiver.addEventListener('click', startRiverGame);
+        
+        restartButtonRiver.addEventListener('click', () => {
+            showRiverSection(startScreenRiver);
+            geminiTipContainerRiver.classList.add('hidden-section');
+            geminiTipTextRiver.textContent = '';
+        });
+
+        geminiTipButtonRiver.addEventListener('click', fetchTimeManagementTip);
+
+        // Mostrar ecrã inicial ao carregar
+        showRiverSection(startScreenRiver);
+
+    </script>
+</body>
+</html>
