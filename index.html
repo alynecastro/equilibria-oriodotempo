@@ -31,7 +31,6 @@
         .boat {
             width: 40px;
             height: 60px;
-            /* background-color: #F59E0B; Cor do barco (laranja) */
             position: absolute;
             bottom: 20px; /* Posição inicial do barco */
             left: 50%;
@@ -45,7 +44,6 @@
         .obstacle, .bonus {
             width: 30px;
             height: 30px;
-            /* background-color: #4B5563; Cor do obstáculo (cinza escuro) */
             position: absolute;
             border-radius: 50%; /* Obstáculos redondos */
             display: flex;
@@ -53,13 +51,6 @@
             align-items: center;
             font-size: 1.5rem; /* Tamanho do emoji do obstáculo/bónus */
         }
-        .obstacle {
-            /* background-color: #7F1D1D; /* Vermelho escuro para obstáculos */
-        }
-        .bonus {
-            /* background-color: #FBBF24; /* Amarelo para bónus */
-        }
-
         .hidden-section {
             display: none;
         }
@@ -219,7 +210,22 @@
 
         targetScoreInfo.textContent = TARGET_SCORE;
 
-        // Função para mostrar uma secção e esconder as outras
+        // Lista de dicas estáticas de Tempus
+        const staticTempusTips = [
+            "O tempo bem gerido é como um rio que flui suavemente para os seus objetivos.",
+            "Priorize as suas tarefas como um navegador experiente escolhe o melhor curso.",
+            "Pequenas pausas podem renovar o seu foco e clareza para a jornada à frente.",
+            "Não deixe que as correntes da procrastinação o desviem do seu destino.",
+            "Cada tarefa concluída é um avanço no grande rio da vida. Celebre as suas vitórias!",
+            "Planeie o seu dia como um mapa, e navegará com mais confiança e propósito.",
+            "A consistência é a chave para dominar o fluxo do tempo. Mantenha o ritmo!"
+        ];
+
+        function getRandomStaticTip() {
+            const randomIndex = Math.floor(Math.random() * staticTempusTips.length);
+            return staticTempusTips[randomIndex];
+        }
+
         function showRiverSection(sectionToShow, fadeIn = true) {
             [startScreenRiver, gameScreenRiver, endScreenRiver, geminiTipContainerRiver, geminiTipLoadingRiver].forEach(section => {
                 if (section.id === sectionToShow.id) {
@@ -377,22 +383,30 @@
             }
         }
         
-        // Função para buscar dica de gestão do tempo da API Gemini
+        // Função para buscar dica de gestão do tempo da API Gemini (com fallback para estática)
         async function fetchTimeManagementTip() {
             geminiTipLoadingRiver.classList.remove('hidden-section');
             geminiTipContainerRiver.classList.add('hidden-section');
             geminiTipTextRiver.textContent = '';
             geminiTipButtonRiver.disabled = true;
 
-            const prompt = "Gere uma curta dica sobre gestão do tempo ou produtividade (máximo 2 frases) para um jogo chamado Equilibria. A dica deve ser prática e inspiradora, como se viesse de um sábio guardião do tempo chamado Tempus. Use uma linguagem clara e motivadora. Não inclua saudações ou despedidas, apenas a dica em si.";
-            
-            let chatHistory = [];
-            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-            const payload = { contents: chatHistory };
-            const apiKey = ""; // Deixar vazio, será fornecido pelo ambiente
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // Adicionado um pequeno delay para simular o carregamento
+            await new Promise(resolve => setTimeout(resolve, 500)); 
 
             try {
+                // A chave API estará vazia no GitHub Pages, forçando o catch.
+                const apiKey = ""; 
+                if (!apiKey && (typeof process === 'undefined' || !process.env || !process.env.GEMINI_API_KEY) ) { 
+                    throw new Error("Chave API não disponível. Usando dica estática.");
+                }
+
+                // O código abaixo só seria executado se uma chave API válida fosse fornecida.
+                const prompt = "Gere uma curta dica sobre gestão do tempo ou produtividade (máximo 2 frases) para um jogo chamado Equilibria. A dica deve ser prática e inspiradora, como se viesse de um sábio guardião do tempo chamado Tempus. Use uma linguagem clara e motivadora. Não inclua saudações ou despedidas, apenas a dica em si.";
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -402,9 +416,8 @@
                 if (!response.ok) {
                     const errorData = await response.json();
                     console.error("Erro da API Gemini (Tempus):", errorData);
-                    throw new Error(`Erro da API: ${response.statusText}`);
+                    throw new Error(`Erro da API: ${response.statusText}. Usando dica estática.`);
                 }
-
                 const result = await response.json();
 
                 if (result.candidates && result.candidates.length > 0 &&
@@ -414,11 +427,12 @@
                     geminiTipTextRiver.textContent = `Tempus recorda: "${text}"`;
                 } else {
                     console.error("Resposta inesperada da API Gemini (Tempus):", result);
-                    geminiTipTextRiver.textContent = "Tempus está a observar o fluxo do tempo... Tente novamente mais tarde.";
+                    throw new Error("Resposta inesperada da API. Usando dica estática.");
                 }
             } catch (error) {
-                console.error('Erro ao buscar dica da API Gemini (Tempus):', error);
-                geminiTipTextRiver.textContent = "Uma corrente inesperada agitou o rio. Por favor, tente novamente para receber a sabedoria de Tempus.";
+                console.warn('Erro ao buscar dica da API Gemini (Tempus) ou chave não disponível:', error.message);
+                const staticTip = getRandomStaticTip();
+                geminiTipTextRiver.textContent = `Tempus recorda: "${staticTip}"`;
             } finally {
                 geminiTipLoadingRiver.classList.add('hidden-section');
                 geminiTipContainerRiver.classList.remove('hidden-section');
